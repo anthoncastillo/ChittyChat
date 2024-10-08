@@ -8,8 +8,21 @@
 
 syntax = "proto3";
 
+option go_package = "Chitty-Chat/chittychat";
+
 package chittychat;
 
+//sevice definition for Chatting
 service Chatter {
-    
+    rpc SendMessage (Chat) returns (Received) {}
+}
+
+message Chat {
+    string text = 1;
+    int32 timestamp = 2;
+    int32 id = 3;
+}
+
+message Received {
+    bool hasReceived = 1;
 }
