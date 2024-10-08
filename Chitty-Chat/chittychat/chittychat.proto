@@ -1,0 +1,15 @@
+// This proto file is going to represent the API
+// for 'ChittyChat'; a distributed service that
+// enables its client to chat. The service will be
+// using gRPC for communication.
+//
+// The API will be using gRPC 'methods' and 'data types'
+// to fulfill the 'System Requirements' for the assignment
+
+syntax = "proto3";
+
+package chittychat;
+
+service Chatter {
+    
+}
