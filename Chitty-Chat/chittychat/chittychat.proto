@@ -1,10 +1,6 @@
-// This proto file is going to represent the API
-// for 'ChittyChat'; a distributed service that
-// enables its client to chat. The service will be
-// using gRPC for communication.
-//
-// The API will be using gRPC 'methods' and 'data types'
-// to fulfill the 'System Requirements' for the assignment
+// This proto file represents the API for 'ChittyChat';
+// a distributed service that enables its clients to chat.
+// The service will be using gRPC for communication.
 
 syntax = "proto3";
 
@@ -12,16 +8,45 @@ option go_package = "Chitty-Chat/chittychat";
 
 package chittychat;
 
-//sevice definition for Chatting
+// Importing Empty type from Google's protobuf package
+import "google/protobuf/empty.proto";
+
+// Message definition for Chatting
 message ChatMessage {
     string client_id = 1;
     string content = 2;
     int64 lamport_time = 3;
 }
 
+// Response for publishing a message
+message PublishResponse {
+    bool success = 1;
+    int64 lamport_time = 2;
+}
+
+// Client information (used for Join and Leave RPCs)
+message ClientInfo {
+    string client_id = 1;
+    string client_name = 2;
+}
+
+// Response when a client joins the chat
+message JoinResponse {
+    bool success = 1;
+    int64 lamport_time = 2;
+    string welcome_message = 3;
+}
+
+// Response when a client leaves the chat
+message LeaveResponse {
+    bool success = 1;
+    int64 lamport_time = 2;
+}
+
+// Service definition for ChittyChat
 service ChittyChat {
     rpc Join(ClientInfo) returns (JoinResponse);
     rpc Leave(ClientInfo) returns (LeaveResponse);
     rpc PublishMessage(ChatMessage) returns (PublishResponse);
-    rpc Subscribe(Empty) returns (stream ChatMessage);
+    rpc Subscribe(google.protobuf.Empty) returns (stream ChatMessage);  // Correctly using Empty now
 }
