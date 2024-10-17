@@ -22,11 +22,6 @@ type ChittyChatServer struct {
 	mutex                                    sync.Mutex
 }
 
-// mustEmbedUnimplementedChittyChatServer implements chittychat.ChittyChatServer.
-func (s *ChittyChatServer) mustEmbedUnimplementedChittyChatServer() {
-	panic("unimplemented")
-}
-
 // Implement the Join method
 func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo) (*chittychat.JoinResponse, error) {
 	// Implementation of the Join method
