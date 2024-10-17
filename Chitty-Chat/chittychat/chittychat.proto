@@ -13,16 +13,15 @@ option go_package = "Chitty-Chat/chittychat";
 package chittychat;
 
 //sevice definition for Chatting
-service Chatter {
-    rpc SendMessage (Chat) returns (Received) {}
+message ChatMessage {
+    string client_id = 1;
+    string content = 2;
+    int64 lamport_time = 3;
 }
 
-message Chat {
-    string text = 1;
-    int32 timestamp = 2;
-    int32 id = 3;
-}
-
-message Received {
-    bool hasReceived = 1;
+service ChittyChat {
+    rpc Join(ClientInfo) returns (JoinResponse);
+    rpc Leave(ClientInfo) returns (LeaveResponse);
+    rpc PublishMessage(ChatMessage) returns (PublishResponse);
+    rpc Subscribe(Empty) returns (stream ChatMessage);
 }
