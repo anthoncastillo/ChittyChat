@@ -82,6 +82,14 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 	s.lamportTime++
 	log.Printf("Message published by %s at Lamport time %d: %s", msg.ClientId, s.lamportTime, msg.Content)
 
+	message := &chittychat.ChatMessage{
+		ClientId:    msg.ClientId,
+		Content:     msg.Content,
+		LamportTime: s.lamportTime,
+	}
+
+	s.PublishToAll(message)
+
 	return &chittychat.PublishResponse{
 		Success:     true,
 		LamportTime: s.lamportTime,
