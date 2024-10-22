@@ -18,7 +18,7 @@ import (
 type ChittyChatServer struct {
 	chittychat.UnimplementedChittyChatServer // Embed this to satisfy the interface
 	clients                                  map[string]chittychat.ChittyChat_SubscribeServer
-	client_id 								 int64
+	clientId 								 int64
 	lamportTime                              int64
 	mutex                                    sync.Mutex
 }
@@ -29,16 +29,16 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.client_id++
+	s.clientId++
 	s.lamportTime++
 
-	log.Printf("Client %d joined at Lamport time %d", s.client_id, s.lamportTime)
+	log.Printf("Client %d joined at Lamport time %d", s.clientId, s.lamportTime)
 
 	return &chittychat.JoinResponse{
 		Success:        true,
 		LamportTime:    s.lamportTime,
 		WelcomeMessage: "Welcome to ChittyChat!",
-		ClientID:		s.client_id,
+		ClientID:		s.clientId,
 	}, nil
 }
 
@@ -110,7 +110,7 @@ func main() {
 	chittychatServer := &ChittyChatServer{
 
 		clients:     make(map[string]chittychat.ChittyChat_SubscribeServer),
-		client_id: 0,
+		clientId: 0,
 		lamportTime: 0,
 	}
 
