@@ -40,13 +40,7 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 		LamportTime: s.lamportTime,
 	}
 
-	// Broadcast the join message to all connected clients
-	for clientID, stream := range s.clients {
-		if err := stream.Send(joinMessage); err != nil {
-			log.Printf("Error sending join message to client %s: %v", clientID, err)
-			delete(s.clients, clientID) // Remove client if there's an error
-		}
-	}
+	s.PublishToAll(joinMessage)
 
 	// Return response to the joining client
 	return &chittychat.JoinResponse{
@@ -108,6 +102,16 @@ func (s *ChittyChatServer) Subscribe(empty *emptypb.Empty, stream chittychat.Chi
 			delete(s.clients, clientID)
 			s.mutex.Unlock()
 			return err
+		}
+	}
+}
+
+func (s *ChittyChatServer) PublishToAll(message *chittychat.ChatMessage) {
+	// Broadcast the join message to all connected clients
+	for clientID, stream := range s.clients {
+		if err := stream.Send(message); err != nil {
+			log.Printf("Error sending join message to client %s: %v", clientID, err)
+			delete(s.clients, clientID) // Remove client if there's an error
 		}
 	}
 }
