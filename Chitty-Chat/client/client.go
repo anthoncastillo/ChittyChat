@@ -2,8 +2,10 @@ package main
 
 import (
 	"Chitty-Chat/Chitty-Chat/chittychat/Chitty-Chat/chittychat"
+	"bufio"
 	"context"
 	"log"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -19,12 +21,17 @@ func main() {
 	}
 	defer conn.Close()
 
+	scanner := bufio.NewScanner(os.Stdin)
 	// Create a ChittyChat client
 	client := chittychat.NewChittyChatClient(conn)
 
 	// Define client ID and name
 	var clientId int64
-	clientName := "Client 123"
+
+	log.Println("Please enter Username:")
+	scanner.Scan()
+	clientName := scanner.Text()
+	log.Printf("Welcome %s", clientName)
 
 	// Join the chat
 	joinChat(client, &clientId, clientName)
@@ -32,14 +39,13 @@ func main() {
 	// Start subscribing to messages in a separate goroutine
 	go subscribeToMessages(client)
 
-	// Publish a few messages
-	for i := 0; i < 3; i++ {
-		publishMessage(client, clientId, "Hello, ChittyChat!")
-		time.Sleep(2 * time.Second)
+	for {
+		scanner.Scan()
+		text := scanner.Text()
+		if len(text) < 128 {
+			publishMessage(client, clientId, text)
+		}
 	}
-
-	// Leave the chat after sending a few messages
-	leaveChat(client, clientId)
 }
 
 func joinChat(client chittychat.ChittyChatClient, clientId *int64, clientName string) {
