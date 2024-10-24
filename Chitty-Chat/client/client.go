@@ -42,7 +42,7 @@ func main() {
 	}
 
 	// Leave the chat after sending a few messages
-	leaveChat(client, clientId)
+	leaveChat(client, clientId, &localTime)
 }
 
 func joinChat(client chittychat.ChittyChatClient, clientId *int64, clientName string, localTime *int64) {
@@ -101,7 +101,7 @@ func subscribeToMessages(client chittychat.ChittyChatClient, localTime *int64) {
 		}
 		*localTime++
 		log.Printf("Received message from %d at Lamport time %d: %s",
-			msg.ClientId, msg.LamportTime, msg.Content)
+			msg.ClientId, *localTime, msg.Content)
 	}
 }
 
