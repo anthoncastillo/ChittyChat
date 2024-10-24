@@ -26,6 +26,9 @@ func main() {
 	var clientId int64
 	clientName := "Client 123"
 
+	// Create a local Lamport timestamp
+	var localTime int64 = 0
+
 	// Join the chat
 	joinChat(client, &clientId, clientName)
 
@@ -105,4 +108,8 @@ func leaveChat(client chittychat.ChittyChatClient, clientId int64) {
 	}
 
 	log.Printf("Left chat at Lamport time: %d", leaveResp.LamportTime)
+}
+
+func updateLamportTime(local *int64, remote int64) {
+	*local = max(*local, remote)
 }
