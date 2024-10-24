@@ -49,6 +49,8 @@ func main() {
 		}
 		if len(text) < 128 {
 			publishMessage(client, clientId, text)
+		} else {
+			log.Print("Message is too long, sorry")
 		}
 	}
 	leaveChat(client, clientId)
