@@ -88,7 +88,7 @@ func subscribeToMessages(client chittychat.ChittyChatClient) {
 		if err != nil {
 			log.Fatalf("Error receiving message: %v", err)
 		}
-		log.Printf("Received message from %s at Lamport time %d: %s",
+		log.Printf("Received message from %d at Lamport time %d: %s",
 			msg.ClientId, msg.LamportTime, msg.Content)
 	}
 }
