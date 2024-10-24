@@ -6,6 +6,7 @@ import (
 	"context"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -20,8 +21,9 @@ func main() {
 		log.Fatalf("Failed to connect to server: %v", err)
 	}
 	defer conn.Close()
-
+	//Create a scanner for user input
 	scanner := bufio.NewScanner(os.Stdin)
+
 	// Create a ChittyChat client
 	client := chittychat.NewChittyChatClient(conn)
 
@@ -42,10 +44,14 @@ func main() {
 	for {
 		scanner.Scan()
 		text := scanner.Text()
+		if strings.Compare(text, "leave") == 0 {
+			break
+		}
 		if len(text) < 128 {
 			publishMessage(client, clientId, text)
 		}
 	}
+	leaveChat(client, clientId)
 }
 
 func joinChat(client chittychat.ChittyChatClient, clientId *int64, clientName string) {

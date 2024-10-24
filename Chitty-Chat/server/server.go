@@ -61,6 +61,8 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	s.lamportTime++
 	log.Printf("Client %d left at Lamport time %d", info.ClientId, s.lamportTime)
 
+	delete(s.clients, info.ClientName)
+
 	leaveMessage := &chittychat.ChatMessage{
 		ClientId:    info.ClientId,
 		Content:     "Participant " + strconv.FormatInt(int64(info.ClientId), 10) + " left Chitty-Chat",
