@@ -38,7 +38,7 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 		Success:        true,
 		LamportTime:    s.lamportTime,
 		WelcomeMessage: "Welcome to ChittyChat!",
-		ClientID:		s.clientId,
+		ClientId:		s.clientId,
 	}, nil
 }
 
@@ -49,7 +49,7 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	defer s.mutex.Unlock()
 
 	s.lamportTime++
-	log.Printf("Client %s left at Lamport time %d", info.ClientId, s.lamportTime)
+	log.Printf("Client %d left at Lamport time %d", info.ClientId, s.lamportTime)
 
 	return &chittychat.LeaveResponse{
 		Success:     true,
@@ -64,7 +64,7 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 	defer s.mutex.Unlock()
 
 	s.lamportTime++
-	log.Printf("Message published by %s at Lamport time %d: %s", msg.ClientId, s.lamportTime, msg.Content)
+	log.Printf("Message published by client %d at Lamport time %d: %s", msg.ClientId, s.lamportTime, msg.Content)
 
 	return &chittychat.PublishResponse{
 		Success:     true,
@@ -84,7 +84,7 @@ func (s *ChittyChatServer) Subscribe(empty *emptypb.Empty, stream chittychat.Chi
 	for {
 		time.Sleep(5 * time.Second)
 		err := stream.Send(&chittychat.ChatMessage{
-			ClientId:    clientID,
+			ClientId:    s.clientId,
 			Content:     "This is a broadcast message",
 			LamportTime: s.lamportTime,
 		})

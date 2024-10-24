@@ -53,7 +53,7 @@ func joinChat(client chittychat.ChittyChatClient, clientId *int64, clientName st
 		log.Fatalf("Failed to join chat: %v", err)
 	}
 
-	*clientId = joinResp.client_id
+	*clientId = joinResp.ClientId
 
 	log.Printf("Joined ChittyChat: %s", joinResp.WelcomeMessage)
 	log.Printf("Joined at Lamport time: %d", joinResp.LamportTime)
