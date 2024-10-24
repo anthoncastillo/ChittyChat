@@ -29,9 +29,14 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-
 	s.clientId++
-	s.lamportTime++
+	
+	//Technically client should pass its own timestamp here
+	//But currently it only passes protobuf clientinfo which has no timestamp
+	//Maybe fix for future, currently assume it's 1 and just increment localtime by 1
+	//Also set localtime to be 1 at start so it ends up as 2 after the first join
+
+	s.lamportTime++	//SHOULD be call to update
 
 	log.Printf("Client %d joined at Lamport time %d", s.clientId, s.lamportTime)
 
@@ -45,8 +50,10 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 
 	s.PublishToAll(joinMessage)
 
+	s.lamportTime++
+	
 	// Return response to the joining client
-	return &chittychat.JoinResponse{
+	return &chittychat.JoinResponse{		//Move this to before publishToAll?
 		Success:        true,
 		LamportTime:    s.lamportTime,
 		WelcomeMessage: "Welcome to ChittyChat!",
@@ -83,7 +90,7 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.lamportTime++
+	updateLamportTime(&s.lamportTime, msg.LamportTime)
 	log.Printf("Message published by client %d at Lamport time %d: %s", msg.ClientId, s.lamportTime, msg.Content)
 
 	message := &chittychat.ChatMessage{
@@ -129,11 +136,16 @@ func (s *ChittyChatServer) Subscribe(empty *emptypb.Empty, stream chittychat.Chi
 func (s *ChittyChatServer) PublishToAll(message *chittychat.ChatMessage) {
 	// Broadcast the join message to all connected clients
 	for clientID, stream := range s.clients {
+		s.lamportTime++
 		if err := stream.Send(message); err != nil {
 			log.Printf("Error sending join message to client %s: %v", clientID, err)
 			delete(s.clients, clientID) // Remove client if there's an error
 		}
 	}
+}
+
+func updateLamportTime(local *int64, remote int64) {
+	*local = max(*local, remote) + 1
 }
 
 func main() {
