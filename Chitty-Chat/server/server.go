@@ -24,13 +24,25 @@ type ChittyChatServer struct {
 
 // Implement the Join method
 func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo) (*chittychat.JoinResponse, error) {
-	// Implementation of the Join method
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	// Increment Lamport time for the join event
 	s.lamportTime++
+
+	// Log the join event
 	log.Printf("Client %s joined at Lamport time %d", info.ClientId, s.lamportTime)
 
+	// Prepare the join message to be broadcasted
+	joinMessage := &chittychat.ChatMessage{
+		ClientId:    info.ClientId,
+		Content:     "Participant " + info.ClientId + " joined Chitty-Chat",
+		LamportTime: s.lamportTime,
+	}
+
+	s.PublishToAll(joinMessage)
+
+	// Return response to the joining client
 	return &chittychat.JoinResponse{
 		Success:        true,
 		LamportTime:    s.lamportTime,
@@ -47,6 +59,14 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	s.lamportTime++
 	log.Printf("Client %s left at Lamport time %d", info.ClientId, s.lamportTime)
 
+	leaveMessage := &chittychat.ChatMessage{
+		ClientId:    info.ClientId,
+		Content:     "Participant " + info.ClientId + " left Chitty-Chat",
+		LamportTime: s.lamportTime,
+	}
+
+	s.PublishToAll(leaveMessage)
+
 	return &chittychat.LeaveResponse{
 		Success:     true,
 		LamportTime: s.lamportTime,
@@ -61,6 +81,14 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 
 	s.lamportTime++
 	log.Printf("Message published by %s at Lamport time %d: %s", msg.ClientId, s.lamportTime, msg.Content)
+
+	message := &chittychat.ChatMessage{
+		ClientId:    msg.ClientId,
+		Content:     msg.Content,
+		LamportTime: s.lamportTime,
+	}
+
+	s.PublishToAll(message)
 
 	return &chittychat.PublishResponse{
 		Success:     true,
@@ -90,6 +118,16 @@ func (s *ChittyChatServer) Subscribe(empty *emptypb.Empty, stream chittychat.Chi
 			delete(s.clients, clientID)
 			s.mutex.Unlock()
 			return err
+		}
+	}
+}
+
+func (s *ChittyChatServer) PublishToAll(message *chittychat.ChatMessage) {
+	// Broadcast the join message to all connected clients
+	for clientID, stream := range s.clients {
+		if err := stream.Send(message); err != nil {
+			log.Printf("Error sending join message to client %s: %v", clientID, err)
+			delete(s.clients, clientID) // Remove client if there's an error
 		}
 	}
 }
