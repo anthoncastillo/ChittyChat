@@ -18,6 +18,7 @@ import (
 type ChittyChatServer struct {
 	chittychat.UnimplementedChittyChatServer // Embed this to satisfy the interface
 	clients                                  map[string]chittychat.ChittyChat_SubscribeServer
+	clientId 								 int64
 	lamportTime                              int64
 	mutex                                    sync.Mutex
 }
@@ -27,11 +28,12 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	// Increment Lamport time for the join event
+
+	s.clientId++
 	s.lamportTime++
 
-	// Log the join event
-	log.Printf("Client %s joined at Lamport time %d", info.ClientId, s.lamportTime)
+	log.Printf("Client %d joined at Lamport time %d", s.clientId, s.lamportTime)
+
 
 	// Prepare the join message to be broadcasted
 	joinMessage := &chittychat.ChatMessage{
@@ -47,6 +49,7 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 		Success:        true,
 		LamportTime:    s.lamportTime,
 		WelcomeMessage: "Welcome to ChittyChat!",
+		ClientId:		s.clientId,
 	}, nil
 }
 
@@ -57,7 +60,7 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	defer s.mutex.Unlock()
 
 	s.lamportTime++
-	log.Printf("Client %s left at Lamport time %d", info.ClientId, s.lamportTime)
+	log.Printf("Client %d left at Lamport time %d", info.ClientId, s.lamportTime)
 
 	leaveMessage := &chittychat.ChatMessage{
 		ClientId:    info.ClientId,
@@ -80,7 +83,7 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 	defer s.mutex.Unlock()
 
 	s.lamportTime++
-	log.Printf("Message published by %s at Lamport time %d: %s", msg.ClientId, s.lamportTime, msg.Content)
+	log.Printf("Message published by client %d at Lamport time %d: %s", msg.ClientId, s.lamportTime, msg.Content)
 
 	message := &chittychat.ChatMessage{
 		ClientId:    msg.ClientId,
@@ -108,7 +111,7 @@ func (s *ChittyChatServer) Subscribe(empty *emptypb.Empty, stream chittychat.Chi
 	for {
 		time.Sleep(5 * time.Second)
 		err := stream.Send(&chittychat.ChatMessage{
-			ClientId:    clientID,
+			ClientId:    s.clientId,
 			Content:     "This is a broadcast message",
 			LamportTime: s.lamportTime,
 		})
@@ -144,6 +147,7 @@ func main() {
 	chittychatServer := &ChittyChatServer{
 
 		clients:     make(map[string]chittychat.ChittyChat_SubscribeServer),
+		clientId: 0,
 		lamportTime: 0,
 	}
 

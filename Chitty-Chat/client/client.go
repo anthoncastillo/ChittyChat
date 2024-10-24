@@ -23,11 +23,11 @@ func main() {
 	client := chittychat.NewChittyChatClient(conn)
 
 	// Define client ID and name
-	clientId := "client123"
+	var clientId int64
 	clientName := "Client 123"
 
 	// Join the chat
-	joinChat(client, clientId, clientName)
+	joinChat(client, &clientId, clientName)
 
 	// Start subscribing to messages in a separate goroutine
 	go subscribeToMessages(client)
@@ -42,23 +42,24 @@ func main() {
 	leaveChat(client, clientId)
 }
 
-func joinChat(client chittychat.ChittyChatClient, clientId, clientName string) {
+func joinChat(client chittychat.ChittyChatClient, clientId *int64, clientName string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	joinResp, err := client.Join(ctx, &chittychat.ClientInfo{
-		ClientId:   clientId,
 		ClientName: clientName,
 	})
 	if err != nil {
 		log.Fatalf("Failed to join chat: %v", err)
 	}
 
+	*clientId = joinResp.ClientId
+
 	log.Printf("Joined ChittyChat: %s", joinResp.WelcomeMessage)
 	log.Printf("Joined at Lamport time: %d", joinResp.LamportTime)
 }
 
-func publishMessage(client chittychat.ChittyChatClient, clientId string, content string) {
+func publishMessage(client chittychat.ChittyChatClient, clientId int64, content string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
@@ -92,7 +93,7 @@ func subscribeToMessages(client chittychat.ChittyChatClient) {
 	}
 }
 
-func leaveChat(client chittychat.ChittyChatClient, clientId string) {
+func leaveChat(client chittychat.ChittyChatClient, clientId int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
