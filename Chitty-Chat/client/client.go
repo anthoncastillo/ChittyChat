@@ -52,12 +52,12 @@ func main() {
 			break
 		}
 		if len(text) < 128 {
-			publishMessage(client, clientId, text)
+			publishMessage(client, clientId, text, &localTime)
 		} else {
 			log.Print("Message is too long, sorry")
 		}
 	}
-	leaveChat(client, clientId)
+	leaveChat(client, clientId, &localTime)
 }
 
 func joinChat(client chittychat.ChittyChatClient, clientId *int64, clientName string, localTime *int64) {
