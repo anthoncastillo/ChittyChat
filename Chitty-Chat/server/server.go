@@ -8,9 +8,9 @@ import (
 	"context"
 	"log"
 	"net"
+	"strconv"
 	"sync"
 	"time"
-	"strconv"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
@@ -19,7 +19,7 @@ import (
 type ChittyChatServer struct {
 	chittychat.UnimplementedChittyChatServer // Embed this to satisfy the interface
 	clients                                  map[string]chittychat.ChittyChat_SubscribeServer
-	clientId 								 int64
+	clientId                                 int64
 	lamportTime                              int64
 	mutex                                    sync.Mutex
 }
@@ -29,17 +29,15 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-
 	s.clientId++
 	s.lamportTime++
 
 	log.Printf("Client %d joined at Lamport time %d", s.clientId, s.lamportTime)
 
-
 	// Prepare the join message to be broadcasted
 	joinMessage := &chittychat.ChatMessage{
 		ClientId:    info.ClientId,
-		Content:     "Participant " + strconv.FormatInt(int64(info.ClientId),10) + " joined Chitty-Chat",
+		Content:     "Participant " + strconv.FormatInt(int64(info.ClientId), 10) + " joined Chitty-Chat",
 		LamportTime: s.lamportTime,
 	}
 
@@ -50,7 +48,7 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 		Success:        true,
 		LamportTime:    s.lamportTime,
 		WelcomeMessage: "Welcome to ChittyChat!",
-		ClientId:		s.clientId,
+		ClientId:       s.clientId,
 	}, nil
 }
 
@@ -63,9 +61,11 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	s.lamportTime++
 	log.Printf("Client %d left at Lamport time %d", info.ClientId, s.lamportTime)
 
+	delete(s.clients, info.ClientName)
+
 	leaveMessage := &chittychat.ChatMessage{
 		ClientId:    info.ClientId,
-		Content:     "Participant " + strconv.FormatInt(int64(info.ClientId),10) + " left Chitty-Chat",
+		Content:     "Participant " + strconv.FormatInt(int64(info.ClientId), 10) + " left Chitty-Chat",
 		LamportTime: s.lamportTime,
 	}
 
@@ -148,7 +148,7 @@ func main() {
 	chittychatServer := &ChittyChatServer{
 
 		clients:     make(map[string]chittychat.ChittyChat_SubscribeServer),
-		clientId: 0,
+		clientId:    0,
 		lamportTime: 0,
 	}
 

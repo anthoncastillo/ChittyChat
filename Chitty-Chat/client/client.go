@@ -2,8 +2,11 @@ package main
 
 import (
 	"Chitty-Chat/Chitty-Chat/chittychat/Chitty-Chat/chittychat"
+	"bufio"
 	"context"
 	"log"
+	"os"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -18,13 +21,19 @@ func main() {
 		log.Fatalf("Failed to connect to server: %v", err)
 	}
 	defer conn.Close()
+	//Create a scanner for user input
+	scanner := bufio.NewScanner(os.Stdin)
 
 	// Create a ChittyChat client
 	client := chittychat.NewChittyChatClient(conn)
 
 	// Define client ID and name
 	var clientId int64
-	clientName := "Client 123"
+
+	log.Println("Please enter Username:")
+	scanner.Scan()
+	clientName := scanner.Text()
+	log.Printf("Welcome %s", clientName)
 
 	// Join the chat
 	joinChat(client, &clientId, clientName)
@@ -32,13 +41,18 @@ func main() {
 	// Start subscribing to messages in a separate goroutine
 	go subscribeToMessages(client)
 
-	// Publish a few messages
-	for i := 0; i < 3; i++ {
-		publishMessage(client, clientId, "Hello, ChittyChat!")
-		time.Sleep(2 * time.Second)
+	for {
+		scanner.Scan()
+		text := scanner.Text()
+		if strings.Compare(text, "leave") == 0 {
+			break
+		}
+		if len(text) < 128 {
+			publishMessage(client, clientId, text)
+		} else {
+			log.Print("Message is too long, sorry")
+		}
 	}
-
-	// Leave the chat after sending a few messages
 	leaveChat(client, clientId)
 }
 
