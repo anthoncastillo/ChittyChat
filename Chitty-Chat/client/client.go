@@ -14,6 +14,11 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
+type ClientInfo struct {
+	clientId	int64
+	clientName	string
+}
+
 func main() {
 	// Establish connection to the gRPC server
 	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))

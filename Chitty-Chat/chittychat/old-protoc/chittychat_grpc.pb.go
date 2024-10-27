@@ -6,7 +6,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.5.1
 // - protoc             v5.28.2
-// source: Chitty-Chat/chittychat/chittychat.proto
+// source: chittychat/chittychat.proto
 
 package chittychat
 
@@ -15,6 +15,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -38,7 +39,7 @@ type ChittyChatClient interface {
 	Join(ctx context.Context, in *ClientInfo, opts ...grpc.CallOption) (*JoinResponse, error)
 	Leave(ctx context.Context, in *ClientInfo, opts ...grpc.CallOption) (*LeaveResponse, error)
 	PublishMessage(ctx context.Context, in *ChatMessage, opts ...grpc.CallOption) (*PublishResponse, error)
-	Subscribe(ctx context.Context, in *ClientInfo, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatMessage], error)
+	Subscribe(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatMessage], error)
 }
 
 type chittyChatClient struct {
@@ -79,13 +80,13 @@ func (c *chittyChatClient) PublishMessage(ctx context.Context, in *ChatMessage, 
 	return out, nil
 }
 
-func (c *chittyChatClient) Subscribe(ctx context.Context, in *ClientInfo, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatMessage], error) {
+func (c *chittyChatClient) Subscribe(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (grpc.ServerStreamingClient[ChatMessage], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &ChittyChat_ServiceDesc.Streams[0], ChittyChat_Subscribe_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[ClientInfo, ChatMessage]{ClientStream: stream}
+	x := &grpc.GenericClientStream[emptypb.Empty, ChatMessage]{ClientStream: stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -107,7 +108,7 @@ type ChittyChatServer interface {
 	Join(context.Context, *ClientInfo) (*JoinResponse, error)
 	Leave(context.Context, *ClientInfo) (*LeaveResponse, error)
 	PublishMessage(context.Context, *ChatMessage) (*PublishResponse, error)
-	Subscribe(*ClientInfo, grpc.ServerStreamingServer[ChatMessage]) error
+	Subscribe(*emptypb.Empty, grpc.ServerStreamingServer[ChatMessage]) error
 	mustEmbedUnimplementedChittyChatServer()
 }
 
@@ -127,7 +128,7 @@ func (UnimplementedChittyChatServer) Leave(context.Context, *ClientInfo) (*Leave
 func (UnimplementedChittyChatServer) PublishMessage(context.Context, *ChatMessage) (*PublishResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishMessage not implemented")
 }
-func (UnimplementedChittyChatServer) Subscribe(*ClientInfo, grpc.ServerStreamingServer[ChatMessage]) error {
+func (UnimplementedChittyChatServer) Subscribe(*emptypb.Empty, grpc.ServerStreamingServer[ChatMessage]) error {
 	return status.Errorf(codes.Unimplemented, "method Subscribe not implemented")
 }
 func (UnimplementedChittyChatServer) mustEmbedUnimplementedChittyChatServer() {}
@@ -206,11 +207,11 @@ func _ChittyChat_PublishMessage_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _ChittyChat_Subscribe_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(ClientInfo)
+	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ChittyChatServer).Subscribe(m, &grpc.GenericServerStream[ClientInfo, ChatMessage]{ServerStream: stream})
+	return srv.(ChittyChatServer).Subscribe(m, &grpc.GenericServerStream[emptypb.Empty, ChatMessage]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
@@ -243,5 +244,5 @@ var ChittyChat_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "Chitty-Chat/chittychat/chittychat.proto",
+	Metadata: "chittychat/chittychat.proto",
 }
