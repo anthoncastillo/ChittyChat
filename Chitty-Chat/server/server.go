@@ -10,7 +10,6 @@ import (
 	"net"
 	"strconv"
 	"sync"
-	"time"
 
 	"google.golang.org/grpc"
 )
@@ -50,11 +49,13 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 
 	s.lamportTime++
 	
+	welcomeMsg := "Welcome to ChittyChat, " + info.ClientName
+
 	// Return response to the joining client
 	return &chittychat.JoinResponse{		//Move this to before publishToAll?
 		Success:        true,
 		LamportTime:    s.lamportTime,
-		WelcomeMessage: "Welcome to ChittyChat!",
+		WelcomeMessage: welcomeMsg,
 		ClientId:       s.clientId,
 	}, nil
 }
@@ -118,19 +119,7 @@ func (s *ChittyChatServer) Subscribe(clientInfo *chittychat.ClientInfo, stream c
 
 	// Keep the stream open and simulate broadcasting messages
 	for {
-		time.Sleep(5 * time.Second)
-		err := stream.Send(&chittychat.ChatMessage{
-			ClientInfo:    clientInfo,
-			Content:     "This is a broadcast message",
-			LamportTime: s.lamportTime,
-		})
-		if err != nil {
-			log.Printf("Error sending to client %s: %v", clientID, err)
-			s.mutex.Lock()
-			delete(s.clients, clientID)
-			s.mutex.Unlock()
-			return err
-		}
+		
 	}
 }
 

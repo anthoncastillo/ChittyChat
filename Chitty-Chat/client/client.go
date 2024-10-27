@@ -76,7 +76,7 @@ func joinChat(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientI
 
 	*&clientInfo.ClientId = joinResp.ClientId
 
-	log.Printf("Joined ChittyChat: %s at Lamport time %d", joinResp.WelcomeMessage, *localTime)
+	log.Printf("%s (Lamport time %d)", joinResp.WelcomeMessage, *localTime)
 }
 
 func publishMessage(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, content string, localTime *int64) {
