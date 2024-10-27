@@ -27,15 +27,12 @@ func main() {
 	// Create a ChittyChat client
 	client := chittychat.NewChittyChatClient(conn)
 
-	// Define client ID and name
-	//var clientId int64 //now included in clientinfo struct
-
 	log.Println("Please enter Username:")
 	scanner.Scan()
 	clientInfo := chittychat.ClientInfo {
 		ClientName: scanner.Text(),
 	}
-	//clientName := scanner.Text() old
+
 	log.Printf("Welcome %s", clientInfo.ClientName)
 
 	// Create a local Lamport timestamp
@@ -79,8 +76,7 @@ func joinChat(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientI
 
 	*&clientInfo.ClientId = joinResp.ClientId
 
-	log.Printf("Joined ChittyChat: %s", joinResp.WelcomeMessage)
-	log.Printf("Joined at Lamport time: %d", *localTime)
+	log.Printf("%s (Lamport time %d)", joinResp.WelcomeMessage, *localTime)
 }
 
 func publishMessage(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, content string, localTime *int64) {
@@ -100,7 +96,7 @@ func publishMessage(client chittychat.ChittyChatClient, clientInfo *chittychat.C
 
 	updateLamportTime(localTime, pubResp.LamportTime)
 
-	log.Printf("Message published at Lamport time: %d", *localTime)
+	//log.Printf("Message published at Lamport time: %d", *localTime)
 }
 
 func subscribeToMessages(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, localTime *int64) {
@@ -117,8 +113,7 @@ func subscribeToMessages(client chittychat.ChittyChatClient, clientInfo *chittyc
 			log.Fatalf("Error receiving message: %v", err)
 		}
 		updateLamportTime(localTime, msg.LamportTime)
-		log.Printf("Received message from %d at Lamport time %d: %s",
-			msg.ClientInfo.ClientId, *localTime, msg.Content)
+		log.Printf("%s : %s (Lamport time: %d)", msg.ClientInfo.ClientName, msg.Content, *localTime)
 	}
 }
 
@@ -128,9 +123,7 @@ func leaveChat(client chittychat.ChittyChatClient, clientInfo *chittychat.Client
 
 	*localTime++
 
-	leaveResp, err := client.Leave(ctx, &chittychat.ClientInfo{
-		ClientId: clientInfo.ClientId,
-	})
+	leaveResp, err := client.Leave(ctx, clientInfo)
 	if err != nil {
 		log.Fatalf("Failed to leave chat: %v", err)
 	}
