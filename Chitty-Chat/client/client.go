@@ -52,12 +52,12 @@ func main() {
 			break
 		}
 		if len(text) < 128 {
-			publishMessage(client, clientId, text)
+			publishMessage(client, clientId, text, &localTime)
 		} else {
 			log.Print("Message is too long, sorry")
 		}
 	}
-	leaveChat(client, clientId)
+	leaveChat(client, clientId, &localTime)
 }
 
 func joinChat(client chittychat.ChittyChatClient, clientId *int64, clientName string, localTime *int64) {
@@ -114,7 +114,7 @@ func subscribeToMessages(client chittychat.ChittyChatClient, localTime *int64) {
 		if err != nil {
 			log.Fatalf("Error receiving message: %v", err)
 		}
-		*localTime++
+		updateLamportTime(localTime, msg.LamportTime)
 		log.Printf("Received message from %d at Lamport time %d: %s",
 			msg.ClientId, *localTime, msg.Content)
 	}

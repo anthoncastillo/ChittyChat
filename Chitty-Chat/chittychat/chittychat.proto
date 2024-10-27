@@ -8,12 +8,9 @@ option go_package = "Chitty-Chat/chittychat";
 
 package chittychat;
 
-// Importing Empty type from Google's protobuf package
-import "google/protobuf/empty.proto";
-
 // Message definition for Chatting
 message ChatMessage {
-    int64 client_id = 1;
+    ClientInfo client_info = 1;
     string content = 2;
     int64 lamport_time = 3;
 }
@@ -49,5 +46,5 @@ service ChittyChat {
     rpc Join(ClientInfo) returns (JoinResponse);
     rpc Leave(ClientInfo) returns (LeaveResponse);
     rpc PublishMessage(ChatMessage) returns (PublishResponse);
-    rpc Subscribe(google.protobuf.Empty) returns (stream ChatMessage);  // Correctly using Empty now
+    rpc Subscribe(ClientInfo) returns (stream ChatMessage);
 }

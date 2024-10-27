@@ -6,6 +6,7 @@ package main
 import (
 	"Chitty-Chat/Chitty-Chat/chittychat/Chitty-Chat/chittychat"
 	"context"
+	"math/rand/v2"
 	"log"
 	"net"
 	"strconv"
@@ -110,7 +111,8 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 
 // Implement the Subscribe method
 func (s *ChittyChatServer) Subscribe(empty *emptypb.Empty, stream chittychat.ChittyChat_SubscribeServer) error {
-	clientID := "some_unique_id" // This should be generated or passed when the client joins
+	
+	clientID := "ID " + strconv.FormatInt(int64(rand.IntN(1000)),10) // This should be generated or passed when the client joins
 
 	s.mutex.Lock()
 	s.clients[clientID] = stream
