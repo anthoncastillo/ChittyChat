@@ -61,6 +61,7 @@ func main() {
 		}
 	}
 	leaveChat(client, &clientInfo, &localTime)
+
 }
 
 func joinChat(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, localTime *int64) {
