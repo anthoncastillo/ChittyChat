@@ -123,9 +123,7 @@ func leaveChat(client chittychat.ChittyChatClient, clientInfo *chittychat.Client
 
 	*localTime++
 
-	leaveResp, err := client.Leave(ctx, &chittychat.ClientInfo{
-		ClientId: clientInfo.ClientId,
-	})
+	leaveResp, err := client.Leave(ctx, clientInfo)
 	if err != nil {
 		log.Fatalf("Failed to leave chat: %v", err)
 	}

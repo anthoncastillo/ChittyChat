@@ -10,6 +10,7 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"time"
 
 	"google.golang.org/grpc"
 )
@@ -48,14 +49,12 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	s.PublishToAll(joinMessage)
 
 	s.lamportTime++
-	
-	welcomeMsg := "Welcome to ChittyChat, " + info.ClientName
 
 	// Return response to the joining client
 	return &chittychat.JoinResponse{		//Move this to before publishToAll?
 		Success:        true,
 		LamportTime:    s.lamportTime,
-		WelcomeMessage: welcomeMsg,
+		WelcomeMessage: "Welcome to ChittyChat, " + info.ClientName,
 		ClientId:       s.clientId,
 	}, nil
 }
@@ -73,7 +72,7 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 
 	leaveMessage := &chittychat.ChatMessage{
 		ClientInfo:    info,
-		Content:     "Participant " + strconv.FormatInt(int64(info.ClientId), 10) + " left Chitty-Chat",
+		Content:     info.ClientName + " left Chitty-Chat",
 		LamportTime: s.lamportTime,
 	}
 
@@ -119,7 +118,21 @@ func (s *ChittyChatServer) Subscribe(clientInfo *chittychat.ClientInfo, stream c
 
 	// Keep the stream open and simulate broadcasting messages
 	for {
-		
+		time.Sleep(5 * time.Second)
+		/**
+		err := stream.Send(&chittychat.ChatMessage{
+			ClientInfo:    clientInfo,
+			Content:     "This is a broadcast message",
+			LamportTime: s.lamportTime,
+		})
+		if err != nil {
+			log.Printf("Error sending to client %s: %v", clientID, err)
+			s.mutex.Lock()
+			delete(s.clients, clientID)
+			s.mutex.Unlock()
+			return err
+		}
+			*/
 	}
 }
 
