@@ -43,8 +43,8 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 
 	// Prepare the join message to be broadcasted
 	joinMessage := &chittychat.ChatMessage{
-		ClientId:    info.ClientId,
-		Content:     "Participant " + strconv.FormatInt(int64(info.ClientId), 10) + " joined Chitty-Chat",
+		ClientInfo:    info,
+		Content:     "Participant " + *&info.ClientName + " joined Chitty-Chat",
 		LamportTime: s.lamportTime,
 	}
 
