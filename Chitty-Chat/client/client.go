@@ -11,7 +11,6 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 
@@ -46,7 +45,7 @@ func main() {
 	joinChat(client, &clientInfo, &localTime)
 
 	// Start subscribing to messages in a separate goroutine
-	go subscribeToMessages(client, &localTime)
+	go subscribeToMessages(client, &clientInfo, &localTime)
 
 
 	for {
@@ -56,12 +55,12 @@ func main() {
 			break
 		}
 		if len(text) < 128 {
-			publishMessage(client, clientId, text, &localTime)
+			publishMessage(client, &clientInfo, text, &localTime)
 		} else {
 			log.Print("Message is too long, sorry")
 		}
 	}
-	leaveChat(client, clientId, &localTime)
+	leaveChat(client, &clientInfo, &localTime)
 }
 
 func joinChat(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, localTime *int64) {
@@ -83,14 +82,14 @@ func joinChat(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientI
 	log.Printf("Joined at Lamport time: %d", *localTime)
 }
 
-func publishMessage(client chittychat.ChittyChatClient, clientId int64, content string, localTime *int64) {
+func publishMessage(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, content string, localTime *int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	*localTime++
 
 	pubResp, err := client.PublishMessage(ctx, &chittychat.ChatMessage{
-		ClientId:    clientId,
+		ClientInfo:    clientInfo,
 		Content:     content,
 		LamportTime: *localTime,
 	})
@@ -103,9 +102,9 @@ func publishMessage(client chittychat.ChittyChatClient, clientId int64, content 
 	log.Printf("Message published at Lamport time: %d", *localTime)
 }
 
-func subscribeToMessages(client chittychat.ChittyChatClient, localTime *int64) {
+func subscribeToMessages(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, localTime *int64) {
 	// Create an empty context for the subscription
-	stream, err := client.Subscribe(context.Background(), &emptypb.Empty{})
+	stream, err := client.Subscribe(context.Background(), clientInfo)
 	if err != nil {
 		log.Fatalf("Failed to subscribe to messages: %v", err)
 	}
@@ -118,18 +117,18 @@ func subscribeToMessages(client chittychat.ChittyChatClient, localTime *int64) {
 		}
 		updateLamportTime(localTime, msg.LamportTime)
 		log.Printf("Received message from %d at Lamport time %d: %s",
-			msg.ClientId, *localTime, msg.Content)
+			msg.ClientInfo.ClientId, *localTime, msg.Content)
 	}
 }
 
-func leaveChat(client chittychat.ChittyChatClient, clientId int64, localTime *int64) {
+func leaveChat(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, localTime *int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	*localTime++
 
 	leaveResp, err := client.Leave(ctx, &chittychat.ClientInfo{
-		ClientId: clientId,
+		ClientId: clientInfo.ClientId,
 	})
 	if err != nil {
 		log.Fatalf("Failed to leave chat: %v", err)

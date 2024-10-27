@@ -6,7 +6,6 @@ package main
 import (
 	"Chitty-Chat/Chitty-Chat/chittychat/Chitty-Chat/chittychat"
 	"context"
-	"math/rand/v2"
 	"log"
 	"net"
 	"strconv"
@@ -14,7 +13,6 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type ChittyChatServer struct {
@@ -73,7 +71,7 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	delete(s.clients, info.ClientName)
 
 	leaveMessage := &chittychat.ChatMessage{
-		ClientId:    info.ClientId,
+		ClientInfo:    info,
 		Content:     "Participant " + strconv.FormatInt(int64(info.ClientId), 10) + " left Chitty-Chat",
 		LamportTime: s.lamportTime,
 	}
@@ -93,10 +91,10 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 	defer s.mutex.Unlock()
 
 	updateLamportTime(&s.lamportTime, msg.LamportTime)
-	log.Printf("Message published by client %d at Lamport time %d: %s", msg.ClientId, s.lamportTime, msg.Content)
+	log.Printf("Message published by client %d %s at Lamport time %d: %s", msg.ClientInfo.ClientId, msg.ClientInfo.ClientName, s.lamportTime, msg.Content)
 
 	message := &chittychat.ChatMessage{
-		ClientId:    msg.ClientId,
+		ClientInfo:    msg.ClientInfo,
 		Content:     msg.Content,
 		LamportTime: s.lamportTime,
 	}
@@ -110,9 +108,9 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 }
 
 // Implement the Subscribe method
-func (s *ChittyChatServer) Subscribe(empty *emptypb.Empty, stream chittychat.ChittyChat_SubscribeServer) error {
+func (s *ChittyChatServer) Subscribe(clientInfo *chittychat.ClientInfo, stream chittychat.ChittyChat_SubscribeServer) error {
 	
-	clientID := "ID " + strconv.FormatInt(int64(rand.IntN(1000)),10) // This should be generated or passed when the client joins
+	clientID := "ID " + strconv.FormatInt(int64(clientInfo.ClientId),10) // This should be generated or passed when the client joins
 
 	s.mutex.Lock()
 	s.clients[clientID] = stream
@@ -122,7 +120,7 @@ func (s *ChittyChatServer) Subscribe(empty *emptypb.Empty, stream chittychat.Chi
 	for {
 		time.Sleep(5 * time.Second)
 		err := stream.Send(&chittychat.ChatMessage{
-			ClientId:    s.clientId,
+			ClientInfo:    clientInfo,
 			Content:     "This is a broadcast message",
 			LamportTime: s.lamportTime,
 		})
