@@ -14,10 +14,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type ClientInfo struct {
-	clientId	int64
-	clientName	string
-}
 
 func main() {
 	// Establish connection to the gRPC server
@@ -33,18 +29,21 @@ func main() {
 	client := chittychat.NewChittyChatClient(conn)
 
 	// Define client ID and name
-	var clientId int64
+	//var clientId int64 //now included in clientinfo struct
 
 	log.Println("Please enter Username:")
 	scanner.Scan()
-	clientName := scanner.Text()
-	log.Printf("Welcome %s", clientName)
+	clientInfo := chittychat.ClientInfo {
+		ClientName: scanner.Text(),
+	}
+	//clientName := scanner.Text() old
+	log.Printf("Welcome %s", clientInfo.ClientName)
 
 	// Create a local Lamport timestamp
 	var localTime int64 = 0
 
 	// Join the chat
-	joinChat(client, &clientId, clientName, &localTime)
+	joinChat(client, &clientInfo, &localTime)
 
 	// Start subscribing to messages in a separate goroutine
 	go subscribeToMessages(client, &localTime)
@@ -65,22 +64,20 @@ func main() {
 	leaveChat(client, clientId, &localTime)
 }
 
-func joinChat(client chittychat.ChittyChatClient, clientId *int64, clientName string, localTime *int64) {
+func joinChat(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, localTime *int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
 	*localTime++
 
-	joinResp, err := client.Join(ctx, &chittychat.ClientInfo{
-		ClientName: clientName,
-	})
+	joinResp, err := client.Join(ctx, clientInfo)
 	if err != nil {
 		log.Fatalf("Failed to join chat: %v", err)
 	}
 
 	updateLamportTime(localTime, joinResp.LamportTime)
 
-	*clientId = joinResp.ClientId
+	*&clientInfo.ClientId = joinResp.ClientId
 
 	log.Printf("Joined ChittyChat: %s", joinResp.WelcomeMessage)
 	log.Printf("Joined at Lamport time: %d", *localTime)
