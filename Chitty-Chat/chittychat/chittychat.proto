@@ -12,7 +12,6 @@ package chittychat;
 message ChatMessage {
     ClientInfo client_info = 1;
     string content = 2;
-    int64 lamport_time = 3;
 }
 
 // Response for publishing a message
@@ -25,6 +24,7 @@ message PublishResponse {
 message ClientInfo {
     int64 client_id = 1;
     string client_name = 2;
+    int64 lamport_time = 3;
 }
 
 // Response when a client joins the chat
