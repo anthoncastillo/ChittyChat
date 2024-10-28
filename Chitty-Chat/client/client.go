@@ -27,6 +27,9 @@ func main() {
 	// Create a ChittyChat client
 	client := chittychat.NewChittyChatClient(conn)
 
+	// Create a local Lamport timestamp
+	var localTime int64 = 0
+
 	log.Println("Please enter Username:")
 	scanner.Scan()
 	clientInfo := chittychat.ClientInfo {
@@ -34,9 +37,6 @@ func main() {
 	}
 
 	log.Printf("Welcome %s", clientInfo.ClientName)
-
-	// Create a local Lamport timestamp
-	var localTime int64 = 0
 
 	// Join the chat
 	joinChat(client, &clientInfo, &localTime)
@@ -67,6 +67,8 @@ func joinChat(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientI
 
 	*localTime++
 
+	clientInfo.LamportTime = *localTime
+
 	joinResp, err := client.Join(ctx, clientInfo)
 	if err != nil {
 		log.Fatalf("Failed to join chat: %v", err)
@@ -85,10 +87,11 @@ func publishMessage(client chittychat.ChittyChatClient, clientInfo *chittychat.C
 
 	*localTime++
 
+	clientInfo.LamportTime = *localTime
+
 	pubResp, err := client.PublishMessage(ctx, &chittychat.ChatMessage{
 		ClientInfo:    clientInfo,
 		Content:     content,
-		LamportTime: *localTime,
 	})
 	if err != nil {
 		log.Fatalf("Failed to publish message: %v", err)
@@ -112,7 +115,7 @@ func subscribeToMessages(client chittychat.ChittyChatClient, clientInfo *chittyc
 		if err != nil {
 			log.Fatalf("Error receiving message: %v", err)
 		}
-		updateLamportTime(localTime, msg.LamportTime)
+		updateLamportTime(localTime, msg.ClientInfo.LamportTime)
 		log.Printf("%s : %s (Lamport time: %d)", msg.ClientInfo.ClientName, msg.Content, *localTime)
 	}
 }
@@ -122,6 +125,8 @@ func leaveChat(client chittychat.ChittyChatClient, clientInfo *chittychat.Client
 	defer cancel()
 
 	*localTime++
+
+	clientInfo.LamportTime = *localTime
 
 	leaveResp, err := client.Leave(ctx, clientInfo)
 	if err != nil {
