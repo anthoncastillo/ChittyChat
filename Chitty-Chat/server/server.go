@@ -22,18 +22,11 @@ type ChittyChatServer struct {
 	mutex                                    sync.Mutex
 }
 
-// Implement the Join method
 func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo) (*chittychat.JoinResponse, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.clientId++
-
-	//Technically client should pass its own timestamp here
-	//But currently it only passes protobuf clientinfo which has no timestamp
-	//Maybe fix for future, currently assume it's 1 and just increment localtime by 1
-	//Also set localtime to be 1 at start so it ends up as 2 after the first join
-
 	updateLamportTime(&s.lamportTime, info.LamportTime)
 
 	log.Printf("Client %d joined at Lamport time %d", s.clientId, s.lamportTime)
@@ -57,9 +50,7 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	}, nil
 }
 
-// Implement the Leave method
 func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInfo) (*chittychat.LeaveResponse, error) {
-	// Implementation of the Leave method
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -84,9 +75,7 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	}, nil
 }
 
-// Implement the PublishMessage method
 func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.ChatMessage) (*chittychat.PublishResponse, error) {
-	// Implementation of the PublishMessage method
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -103,10 +92,9 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 	}, nil
 }
 
-// Implement the Subscribe method
 func (s *ChittyChatServer) Subscribe(clientInfo *chittychat.ClientInfo, stream chittychat.ChittyChat_SubscribeServer) error {
 
-	clientID := clientInfo.ClientId // This should be generated or passed when the client joins
+	clientID := clientInfo.ClientId
 
 	s.mutex.Lock()
 	s.clients[clientID] = stream
@@ -115,20 +103,6 @@ func (s *ChittyChatServer) Subscribe(clientInfo *chittychat.ClientInfo, stream c
 	// Keep the stream open and simulate broadcasting messages
 	for {
 		time.Sleep(5 * time.Second)
-		/**
-		err := stream.Send(&chittychat.ChatMessage{
-			ClientInfo:    clientInfo,
-			Content:     "This is a broadcast message",
-			LamportTime: s.lamportTime,
-		})
-		if err != nil {
-			log.Printf("Error sending to client %s: %v", clientID, err)
-			s.mutex.Lock()
-			delete(s.clients, clientID)
-			s.mutex.Unlock()
-			return err
-		}
-		*/
 	}
 }
 
@@ -156,7 +130,7 @@ func main() {
 
 	grpcServer := grpc.NewServer()
 
-	// Create an instance of ChittyChatServer
+	// Creates an instance of ChittyChatServer
 	chittychatServer := &ChittyChatServer{
 
 		clients:     make(map[int64]chittychat.ChittyChat_SubscribeServer),
