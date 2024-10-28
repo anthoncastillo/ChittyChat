@@ -8,7 +8,6 @@ import (
 	"context"
 	"log"
 	"net"
-	"strconv"
 	"sync"
 	"time"
 
@@ -17,7 +16,7 @@ import (
 
 type ChittyChatServer struct {
 	chittychat.UnimplementedChittyChatServer // Embed this to satisfy the interface
-	clients                                  map[string]chittychat.ChittyChat_SubscribeServer
+	clients                                  map[int64]chittychat.ChittyChat_SubscribeServer
 	clientId                                 int64
 	lamportTime                              int64
 	mutex                                    sync.Mutex
@@ -29,7 +28,7 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	defer s.mutex.Unlock()
 
 	s.clientId++
-	
+
 	//Technically client should pass its own timestamp here
 	//But currently it only passes protobuf clientinfo which has no timestamp
 	//Maybe fix for future, currently assume it's 1 and just increment localtime by 1
@@ -41,8 +40,8 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 
 	// Prepare the join message to be broadcasted
 	joinMessage := &chittychat.ChatMessage{
-		ClientInfo:    info,
-		Content:     "Participant " + *&info.ClientName + " joined Chitty-Chat",
+		ClientInfo: info,
+		Content:    "Participant " + *&info.ClientName + " joined Chitty-Chat",
 	}
 
 	s.PublishToAll(joinMessage)
@@ -50,7 +49,7 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	s.lamportTime++
 
 	// Return response to the joining client
-	return &chittychat.JoinResponse{		//Move this to before publishToAll?
+	return &chittychat.JoinResponse{ //Move this to before publishToAll?
 		Success:        true,
 		LamportTime:    s.lamportTime,
 		WelcomeMessage: "Welcome to ChittyChat, " + info.ClientName,
@@ -68,11 +67,11 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 
 	log.Printf("Client %d left at Lamport time %d", info.ClientId, s.lamportTime)
 
-	delete(s.clients, info.ClientName)
+	delete(s.clients, info.ClientId)
 
 	leaveMessage := &chittychat.ChatMessage{
-		ClientInfo:    info,
-		Content:     info.ClientName + " left Chitty-Chat",
+		ClientInfo: info,
+		Content:    info.ClientName + " left Chitty-Chat",
 	}
 
 	s.PublishToAll(leaveMessage)
@@ -106,8 +105,8 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 
 // Implement the Subscribe method
 func (s *ChittyChatServer) Subscribe(clientInfo *chittychat.ClientInfo, stream chittychat.ChittyChat_SubscribeServer) error {
-	
-	clientID := "ID " + strconv.FormatInt(int64(clientInfo.ClientId),10) // This should be generated or passed when the client joins
+
+	clientID := clientInfo.ClientId // This should be generated or passed when the client joins
 
 	s.mutex.Lock()
 	s.clients[clientID] = stream
@@ -129,7 +128,7 @@ func (s *ChittyChatServer) Subscribe(clientInfo *chittychat.ClientInfo, stream c
 			s.mutex.Unlock()
 			return err
 		}
-			*/
+		*/
 	}
 }
 
@@ -139,7 +138,7 @@ func (s *ChittyChatServer) PublishToAll(message *chittychat.ChatMessage) {
 		s.lamportTime++
 		message.ClientInfo.LamportTime = s.lamportTime
 		if err := stream.Send(message); err != nil {
-			log.Printf("Error sending join message to client %s: %v", clientID, err)
+			log.Printf("Error sending join message to client %d: %v", clientID, err)
 			delete(s.clients, clientID) // Remove client if there's an error
 		}
 	}
@@ -160,7 +159,7 @@ func main() {
 	// Create an instance of ChittyChatServer
 	chittychatServer := &ChittyChatServer{
 
-		clients:     make(map[string]chittychat.ChittyChat_SubscribeServer),
+		clients:     make(map[int64]chittychat.ChittyChat_SubscribeServer),
 		clientId:    0,
 		lamportTime: 0,
 	}
