@@ -35,7 +35,7 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	//Maybe fix for future, currently assume it's 1 and just increment localtime by 1
 	//Also set localtime to be 1 at start so it ends up as 2 after the first join
 
-	s.lamportTime++	//SHOULD be call to update
+	updateLamportTime(&s.lamportTime, info.LamportTime)
 
 	log.Printf("Client %d joined at Lamport time %d", s.clientId, s.lamportTime)
 
@@ -43,7 +43,6 @@ func (s *ChittyChatServer) Join(ctx context.Context, info *chittychat.ClientInfo
 	joinMessage := &chittychat.ChatMessage{
 		ClientInfo:    info,
 		Content:     "Participant " + *&info.ClientName + " joined Chitty-Chat",
-		LamportTime: s.lamportTime,
 	}
 
 	s.PublishToAll(joinMessage)
@@ -65,7 +64,8 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.lamportTime++
+	updateLamportTime(&s.lamportTime, info.LamportTime)
+
 	log.Printf("Client %d left at Lamport time %d", info.ClientId, s.lamportTime)
 
 	delete(s.clients, info.ClientName)
@@ -73,10 +73,11 @@ func (s *ChittyChatServer) Leave(ctx context.Context, info *chittychat.ClientInf
 	leaveMessage := &chittychat.ChatMessage{
 		ClientInfo:    info,
 		Content:     info.ClientName + " left Chitty-Chat",
-		LamportTime: s.lamportTime,
 	}
 
 	s.PublishToAll(leaveMessage)
+
+	s.lamportTime++
 
 	return &chittychat.LeaveResponse{
 		Success:     true,
@@ -90,16 +91,12 @@ func (s *ChittyChatServer) PublishMessage(ctx context.Context, msg *chittychat.C
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	updateLamportTime(&s.lamportTime, msg.LamportTime)
+	updateLamportTime(&s.lamportTime, msg.ClientInfo.LamportTime)
 	log.Printf("Message published by client %d %s at Lamport time %d: %s", msg.ClientInfo.ClientId, msg.ClientInfo.ClientName, s.lamportTime, msg.Content)
 
-	message := &chittychat.ChatMessage{
-		ClientInfo:    msg.ClientInfo,
-		Content:     msg.Content,
-		LamportTime: s.lamportTime,
-	}
+	s.PublishToAll(msg)
 
-	s.PublishToAll(message)
+	s.lamportTime++
 
 	return &chittychat.PublishResponse{
 		Success:     true,
@@ -140,6 +137,7 @@ func (s *ChittyChatServer) PublishToAll(message *chittychat.ChatMessage) {
 	// Broadcast the join message to all connected clients
 	for clientID, stream := range s.clients {
 		s.lamportTime++
+		message.ClientInfo.LamportTime = s.lamportTime
 		if err := stream.Send(message); err != nil {
 			log.Printf("Error sending join message to client %s: %v", clientID, err)
 			delete(s.clients, clientID) // Remove client if there's an error

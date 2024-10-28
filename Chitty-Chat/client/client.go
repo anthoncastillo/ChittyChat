@@ -99,7 +99,7 @@ func publishMessage(client chittychat.ChittyChatClient, clientInfo *chittychat.C
 
 	updateLamportTime(localTime, pubResp.LamportTime)
 
-	//log.Printf("Message published at Lamport time: %d", *localTime)
+	log.Printf("Publish response received at Lamport time %d", *localTime)
 }
 
 func subscribeToMessages(client chittychat.ChittyChatClient, clientInfo *chittychat.ClientInfo, localTime *int64) {
